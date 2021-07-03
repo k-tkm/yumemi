@@ -16,7 +16,6 @@
       {{ prefecture.prefName }}
       &nbsp;&nbsp;
     </div>
-
     <time-line-chart :display-data="displayData()" />
   </div>
 </template>
@@ -32,31 +31,36 @@ export default {
       // 都道府県名と都道府県コードを保持
       prefectures: [],
       // 総人口
-      population: [],
+      // 初期値としれ空文字と０を入れることにより枠のみを取得できる
+      population: [{ name: '', data: 0 }],
       resasUrl: 'population/composition/perYear?',
       // チェックされた都道府県名と都道府県コード
       check_box_pref: [],
+      // 全ての市町村を取得するためのparametersの一部
       cityCode: '-',
     }
   },
   created() {
     this.fetchprefectures()
-    this.fetchSomething()
+    this.displayData()
   },
   methods: {
     displayData() {
+      console.log(this.population)
       return this.population
     },
-    async fetchSomething(prefCode) {
+    async fetchSomething(prefCodeName) {
       const res = await this.$api(
-        `${this.resasUrl}prefCode=${prefCode.prefCode}&cityCode=${this.cityCode}`
+        `${this.resasUrl}prefCode=${prefCodeName.prefCode}&cityCode=${this.cityCode}`
       )
       this.population.push(
         res.data.result.data
           .map((item) => {
             return {
+              // .filterで総人口だけ取得する際に必要
               info: item.label,
-              name: prefCode.prefName,
+              // 県名
+              name: prefCodeName.prefName,
               data: item.data.map((d) => {
                 return {
                   x: d.year,
@@ -72,18 +76,17 @@ export default {
     // 都道府県の名称とコードを取得
     async fetchprefectures() {
       const res = await this.$api('prefectures')
-      // 都道府県のみを取得
+      // 都道府県名と都道府県コードを配列にまとめる
       const PrefNameArray = res.data.result
-      // populationに代入
       this.prefectures = PrefNameArray
     },
     checkbox_change() {
       // checkを入れるたびにグラフを再描画
-      this.check_box_pref.forEach((prefCode) => {
+      this.check_box_pref.forEach((prefCodeName) => {
         // 一度全消去
         this.population = []
-        this.fetchSomething(prefCode)
-        console.log('a')
+        // チェックされた都道府県名とコードを引数に入れる
+        this.fetchSomething(prefCodeName)
       })
     },
   },
